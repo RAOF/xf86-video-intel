@@ -430,6 +430,9 @@ static Bool sna_pre_init(ScrnInfoPtr scrn, int flags)
 		goto cleanup;
 	}
 
+	if (!sna_xmir_create(sna))
+		return FALSE;
+
 	/* Sanity check */
 	if (hosted() && (sna->flags & SNA_IS_HOSTED) == 0) {
 		xf86DrvMsg(scrn->scrnIndex, X_ERROR,
@@ -437,9 +440,14 @@ static Bool sna_pre_init(ScrnInfoPtr scrn, int flags)
 		goto cleanup;
 	}
 
-	preferred_depth = sna->info->gen < 030 ? 15 : 24;
-	if (!fb_supports_depth(fd, preferred_depth))
+	if (sna->xmir) {
+		/* XXX query depth from xmir */
 		preferred_depth = 24;
+	} else {
+		preferred_depth = sna->info->gen < 030 ? 15 : 24;
+		if (!fb_supports_depth(fd, preferred_depth))
+			preferred_depth = 24;
+	}
 
 	if (!xf86SetDepthBpp(scrn, preferred_depth, 0, 0,
 			     Support32bppFb |
@@ -474,6 +482,9 @@ static Bool sna_pre_init(ScrnInfoPtr scrn, int flags)
 	sna_setup_capabilities(scrn, fd);
 
 	intel_detect_chipset(scrn, sna->pEnt, sna->PciInfo);
+
+	if (!sna_xmir_pre_init(sna))
+		return FALSE;
 
 	kgem_init(&sna->kgem, fd, sna->PciInfo, sna->info->gen);
 	if (xf86ReturnOptValBool(sna->Options, OPTION_ACCEL_DISABLE, FALSE) ||
@@ -558,6 +569,8 @@ sna_block_handler(BLOCKHANDLER_ARGS_DECL)
 
 	if (*tv == NULL || ((*tv)->tv_usec | (*tv)->tv_sec))
 		sna_accel_block_handler(sna, tv);
+
+	sna_xmir_post_damage(sna);
 }
 
 static void
@@ -897,6 +910,8 @@ sna_screen_init(SCREEN_INIT_ARGS_DECL)
 			   "Hardware acceleration initialization failed\n");
 		return FALSE;
 	}
+
+	sna_xmir_init(sna, screen);
 
 	xf86SetBlackWhitePixels(screen);
 
