@@ -50,9 +50,9 @@
 #define FORCE_FULL_REDRAW 0
 
 static void
-sna_xmir_copy_to_mir(WindowPtr win, RegionPtr region)
+sna_xmir_copy_to_mir(xmir_window *xmir_win, RegionPtr region)
 {
-	PixmapPtr src = get_window_pixmap(win);
+	PixmapPtr src = get_window_pixmap(xmir_window_to_windowptr(xmir_win));
 	struct sna *sna = to_sna_from_pixmap(src);
 	struct sna_pixmap *priv;
 	struct kgem_bo *bo;
@@ -70,7 +70,7 @@ sna_xmir_copy_to_mir(WindowPtr win, RegionPtr region)
 	/* XXX size and pitch are bogus, but only used for sanity checks */
 
 	bo = kgem_create_for_prime(&sna->kgem,
-				   xmir_prime_fd_for_window(win),
+				   xmir_window_get_fd(xmir_win),
 				   priv->gpu_bo->pitch * src->drawable.height);
 	if (bo == NULL)
 		return;
@@ -94,32 +94,15 @@ sna_xmir_copy_to_mir(WindowPtr win, RegionPtr region)
 				   src, bo, 0, 0,
 				   boxes, nbox, COPY_LAST)) {
 		kgem_submit(&sna->kgem);
-		xmir_submit_rendering_for_window(win, region);
+		xmir_submit_rendering_for_window(xmir_win, region);
 	}
 
 	kgem_bo_destroy(&sna->kgem, bo);
 }
 
-static void
-sna_xmir_buffer_available(WindowPtr win)
-{
-	RegionPtr region = xmir_window_get_dirty(win);
-	if (RegionNotEmpty(region))
-		sna_xmir_copy_to_mir(win, region);
-}
-
-static void
-sna_xmir_submit_dirty_window(WindowPtr win)
-{
-	if (!xmir_window_has_free_buffer(win))
-		return;
-
-	sna_xmir_copy_to_mir(win, xmir_window_get_dirty(win));
-}
-
 static const xmir_driver sna_xmir_driver = {
 	XMIR_DRIVER_VERSION,
-	sna_xmir_buffer_available
+	sna_xmir_copy_to_mir
 };
 
 bool sna_xmir_create(struct sna *sna)
@@ -157,7 +140,7 @@ void sna_xmir_post_damage(struct sna *sna)
 		return;
 
 	xmir_screen_for_each_damaged_window(sna->xmir,
-					    sna_xmir_submit_dirty_window);
+					    sna_xmir_copy_to_mir);
 }
 
 #endif
