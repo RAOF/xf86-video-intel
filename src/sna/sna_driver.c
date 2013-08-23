@@ -207,7 +207,8 @@ static Bool sna_become_master(struct sna *sna)
 		sna_set_fallback_mode(scrn);
 	}
 
-	sna_mode_update(sna);
+	if (!(sna->flags & SNA_IS_HOSTED))
+		sna_mode_update(sna);
 	return TRUE;
 }
 
