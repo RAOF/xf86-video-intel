@@ -243,6 +243,15 @@ struct kgem_bo *kgem_create_map(struct kgem *kgem,
 				void *ptr, uint32_t size,
 				bool read_only);
 
+uint32_t kgem_surface_size(struct kgem *kgem,
+			   bool relaxed_fencing,
+			   unsigned flags,
+			   uint32_t width,
+			   uint32_t height,
+			   uint32_t bpp,
+			   uint32_t tiling,
+			   uint32_t *pitch);
+
 struct kgem_bo *kgem_create_for_name(struct kgem *kgem, uint32_t name);
 struct kgem_bo *kgem_create_for_prime(struct kgem *kgem, int name, uint32_t size);
 int kgem_bo_export_to_prime(struct kgem *kgem, struct kgem_bo *bo);

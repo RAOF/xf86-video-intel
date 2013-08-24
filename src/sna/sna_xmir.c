@@ -57,7 +57,9 @@ sna_xmir_copy_to_mir(xmir_window *xmir_win, RegionPtr region)
 	struct sna_pixmap *priv;
 	struct kgem_bo *bo;
 	BoxRec box, *boxes;
-	int16_t sx, sy, dx, dy;
+	BoxPtr dst_box;
+	int16_t sx, sy;
+	int32_t pitch;
 	int nbox;
 
 	if (wedged(sna)) /* XXX need pitch/size for CPU copy fallback */
@@ -67,15 +69,24 @@ sna_xmir_copy_to_mir(xmir_window *xmir_win, RegionPtr region)
 	if (priv == NULL)
 		return;
 
+	dst_box = xmir_window_get_drawable_region(xmir_win);
 	/* XXX size and pitch are bogus, but only used for sanity checks */
 
 	bo = kgem_create_for_prime(&sna->kgem,
 				   xmir_window_get_fd(xmir_win),
-				   priv->gpu_bo->pitch * src->drawable.height);
+				   priv->gpu_bo->pitch * (dst_box->y2 - dst_box->y1));
 	if (bo == NULL)
 		return;
 
-	bo->pitch = priv->gpu_bo->pitch;
+	kgem_surface_size(&sna->kgem, FALSE,
+			  KGEM_CAN_CREATE_GPU | KGEM_CAN_CREATE_GTT,
+			  dst_box->x2 - dst_box->x1,
+			  dst_box->y2 - dst_box->y1,
+			  src->drawable.bitsPerPixel,
+			  bo->tiling,
+			  &pitch);
+
+	bo->pitch = pitch;
 
 	if (FORCE_FULL_REDRAW || region == NULL) {
 		box.x1 = box.y1 = 0;
@@ -89,11 +100,10 @@ sna_xmir_copy_to_mir(xmir_window *xmir_win, RegionPtr region)
 	}
 
 	get_window_deltas(src, &sx, &sy);
-	xmir_window_get_drawable_offset(xmir_win, &dx, &dy);
 
 	if (sna->render.copy_boxes(sna, GXcopy,
 				   src, priv->gpu_bo, sx, sy,
-				   src, bo, dx, dy,
+				   src, bo, -dst_box->x1, -dst_box->y1,
 				   boxes, nbox, COPY_LAST)) {
 		kgem_submit(&sna->kgem);
 		xmir_submit_rendering_for_window(xmir_win, region);

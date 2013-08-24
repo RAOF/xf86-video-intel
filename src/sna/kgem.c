@@ -1439,14 +1439,14 @@ void kgem_get_tile_size(struct kgem *kgem, int tiling,
 	}
 }
 
-static uint32_t kgem_surface_size(struct kgem *kgem,
-				  bool relaxed_fencing,
-				  unsigned flags,
-				  uint32_t width,
-				  uint32_t height,
-				  uint32_t bpp,
-				  uint32_t tiling,
-				  uint32_t *pitch)
+uint32_t kgem_surface_size(struct kgem *kgem,
+			   bool relaxed_fencing,
+			   unsigned flags,
+			   uint32_t width,
+			   uint32_t height,
+			   uint32_t bpp,
+			   uint32_t tiling,
+			   uint32_t *pitch)
 {
 	uint32_t tile_width, tile_height;
 	uint32_t size;
