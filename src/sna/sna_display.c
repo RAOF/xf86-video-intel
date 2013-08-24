@@ -3252,6 +3252,10 @@ sna_covering_crtc(ScrnInfoPtr scrn,
 	xf86CrtcPtr best_crtc;
 	int best_coverage, c;
 
+	/* If we're hosted we don't own the CRTC */
+	if (to_sna(scrn)->flags & SNA_IS_HOSTED)
+		return NULL;
+
 	/* If we do not own the VT, we do not own the CRTC either */
 	if (!scrn->vtSema)
 		return NULL;
