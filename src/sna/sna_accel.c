@@ -15252,7 +15252,7 @@ sna_set_screen_pixmap(PixmapPtr pixmap)
 	PixmapPtr old_front = pixmap->drawable.pScreen->devPrivate;
 	WindowPtr root;
 
-	assert(pixmap == to_sna_from_pixmap(pixmap)->front);
+	to_sna_from_pixmap(pixmap)->front = pixmap;
 
 	if (old_front)
 		migrate_dirty_tracking(old_front, pixmap);
