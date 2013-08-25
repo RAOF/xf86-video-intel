@@ -932,6 +932,12 @@ sna_screen_init(SCREEN_INIT_ARGS_DECL)
 			       HARDWARE_CURSOR_UPDATE_UNHIDDEN |
 			       HARDWARE_CURSOR_ARGB))
 		xf86DrvMsg(scrn->scrnIndex, X_INFO, "HW Cursor enabled\n");
+	else {
+		if (xf86_cursors_init(screen, 0, 0, 0))
+			xf86DrvMsg(scrn->scrnIndex, X_INFO, "xf86Cursors enabled, HW Cursor disabled\n");
+		else
+			xf86DrvMsg(scrn->scrnIndex, X_WARNING, "xf86Cursor initialisation failed\n");
+	}
 
 	/* Must force it before EnterVT, so we are in control of VT and
 	 * later memory should be bound when allocating, e.g rotate_mem */
