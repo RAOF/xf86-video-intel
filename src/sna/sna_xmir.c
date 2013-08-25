@@ -78,15 +78,7 @@ sna_xmir_copy_to_mir(xmir_window *xmir_win, RegionPtr region)
 	if (bo == NULL)
 		return;
 
-	kgem_surface_size(&sna->kgem, FALSE,
-			  KGEM_CAN_CREATE_GPU | KGEM_CAN_CREATE_GTT,
-			  dst_box->x2 - dst_box->x1,
-			  dst_box->y2 - dst_box->y1,
-			  src->drawable.bitsPerPixel,
-			  bo->tiling,
-			  &pitch);
-
-	bo->pitch = pitch;
+	bo->pitch = xmir_window_get_stride(xmir_win);
 
 	if (FORCE_FULL_REDRAW || region == NULL) {
 		box.x1 = box.y1 = 0;
